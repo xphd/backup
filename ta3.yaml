@@ -1,11 +1,11 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: tufts-ta3-balancer
+  name: tufts-isi-baseball
   labels:
-    app: tufts-ta3
+    app: tufts-isi-baseball
 spec:
-  loadBalancerIP: 10.108.25.32
+  loadBalancerIP: 10.108.25.33
   type: LoadBalancer
   ports:
     - name: http
@@ -13,20 +13,59 @@ spec:
       protocol: TCP
       targetPort: 8080
   selector:
-    app: tufts-ta3
+    app: tufts-isi-baseball
 ---
 apiVersion: v1
 kind: Pod
 metadata:
-  name: tufts-ta3
+  name: tufts-isi-baseball
   labels:
-    app: tufts-ta3
+    app: tufts-isi-baseball
 spec:
-  restartPolicy: Always
+  restartPolicy: Never
   containers:
+    - name: isi-ta2
+      imagePullPolicy: Always
+      image: registry.datadrivendiscovery.org/ta2-submissions/ta2-isi/ta3ta2/ta3ta2-image
+      env:
+        - name: D3MRUN
+          value: "ta2ta3"
+        - name: D3MINPUTDIR
+          value: "/input"
+        - name: D3MOUTPUTDIR
+          value: "/output"
+        - name: D3MSTATICDIR
+          value: "/static"
+        - name: D3MPROBLEMPATH
+          value: "/input/TRAIN/problem_TRAIN/problemDoc.json"
+        - name: D3MLOCALDIR
+          value: "/output/D3MLOCALDIR"
+        - name: D3MCPU
+          value: "8"
+        - name: D3MRAM
+          value: "28Gi"
+        - name: D3MTIMEOUT
+          value: "600"
+      volumeMounts:
+        - name: input-data
+          mountPath: /input
+          readOnly: true
+        - name: output-data
+          mountPath: /output
+          readOnly: false
+        - name: static-data
+          mountPath: /static
+          readOnly: true
+      resources:
+        requests:
+          memory: 28Gi
+          cpu: 6
+      ports:
+        - containerPort: 45042
+          hostPort: 45042
     # TUFTS TA3
     - name: tufts-ta3
-      image: registry.datadrivendiscovery.org/fheimerl/tuftsgtwiscta3:latest
+      image: registry.datadrivendiscovery.org/ta3-submissions/ta3-tufts/mar-2019-submission
       imagePullPolicy: Always
       command: [./ta3_search]
       args:
@@ -37,7 +76,7 @@ spec:
         - name: D3MINPUTDIR
           value: "/input"
         - name: D3MOUTPUTDIR
-          value: /output"
+          value: "/output"
         - name: D3MLOCALDIR
           value: "/output/D3MLOCALDIR"
         - name: D3MSTATICDIR
@@ -77,7 +116,7 @@ spec:
   volumes:
     - name: input-data
       hostPath:
-        path: /opt/datasets/seed_datasets_data_augmentation/DA_poverty_estimation
+        path: /opt/datasets/seed_datasets_current/185_baseball
         type: Directory
     - name: static-data
       hostPath:
